@@ -1,5 +1,6 @@
 services:
   rplay_server:
+    container_name: rplay_server
     build:
       context: .
       dockerfile: Dockerfile
