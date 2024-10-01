@@ -1,9 +1,10 @@
 import { StatusCodes } from "http-status-codes";
 
-import type { User } from "@/api/user/userModel";
 import { UserRepository } from "@/api/user/userRepository";
+import type { User } from "@/api/user/userValidation";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
+import { UserModel } from "./userModel";
 
 export class UserService {
   private userRepository: UserRepository;
@@ -15,7 +16,8 @@ export class UserService {
   // Retrieves all users from the database
   async findAll(): Promise<ServiceResponse<User[] | null>> {
     try {
-      const users = await this.userRepository.findAllAsync();
+      // const users = await this.userRepository.findAllAsync();
+      const users = await UserModel.find().exec(); // .toArray();  // Cursor를 배열로 변환
       if (!users || users.length === 0) {
         return ServiceResponse.failure("No Users found", null, StatusCodes.NOT_FOUND);
       }
@@ -34,7 +36,8 @@ export class UserService {
   // Retrieves a single user by their ID
   async findById(id: number): Promise<ServiceResponse<User | null>> {
     try {
-      const user = await this.userRepository.findByIdAsync(id);
+      // const user = await this.userRepository.findByIdAsync(id);
+      const user = await UserModel.findOne({ id: 1234 }).exec();
       if (!user) {
         return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
       }
