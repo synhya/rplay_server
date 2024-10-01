@@ -4,6 +4,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    volumes:
+      - /usr/local/bin/ffmpeg:/usr/local/bin/ffmpeg
     expose:
       - 8080
       - 1935 # RTMP
