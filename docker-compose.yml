@@ -6,6 +6,8 @@ services:
       dockerfile: Dockerfile
     expose:
       - 8080
+      - 1935 # RTMP
+      - 8000 # dashboard
     environment:
       - NODE_ENV=production
     labels:
