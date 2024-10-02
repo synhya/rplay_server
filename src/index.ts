@@ -1,5 +1,4 @@
 import { env } from "@/common/utils/envConfig";
-import { nms } from "@/rtmp";
 import { app, logger } from "@/server";
 
 const apiServer = app.listen(env.PORT, () => {
@@ -18,5 +17,3 @@ const onCloseSignal = () => {
 
 process.on("SIGINT", onCloseSignal);
 process.on("SIGTERM", onCloseSignal);
-
-nms.run();
