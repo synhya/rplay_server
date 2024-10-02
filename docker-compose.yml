@@ -8,6 +8,8 @@ services:
       - 8080
     environment:
       - NODE_ENV=production
+    volumes:
+      - /media:/usr/src/app/media
     labels:
       - traefik.enable=true
       - traefik.http.routers.rplay_server.rule=Host(`rplay-api.haniking.com`)
@@ -24,7 +26,7 @@ services:
       dockerfile: DockerfileRtmp
     volumes:
       - /usr/local/bin/ffmpeg:/usr/local/bin/ffmpeg
-      - /media:app/media
+      - /media:/usr/src/app/media
     expose:
       - 1935 # RTMP
       - 8000 # dashboard
