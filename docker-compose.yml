@@ -17,6 +17,8 @@ services:
       - web
   rtmp_server:
     container_name: rtmp_server
+    restart: unless-stopped 
+    network_mode: host
     build:
       context: .
       dockerfile: DockerfileRtmp
@@ -25,7 +27,6 @@ services:
     expose:
       - 1935 # RTMP
       - 8000 # dashboard
-
     environment:
       - NODE_ENV=production
 
