@@ -37,8 +37,9 @@ const nms = new NodeMediaServer({
 });
 
 // 오늘부터 일주일 뒤까지만 유효한 URL을 생성
+const username = "synhya";
 const expireTime = Date.now() + 60 * 60 * 24 * 7 * 1000;
-const keyString = `/live/stream-${expireTime}-${process.env.RTMP_SECRET}`;
+const keyString = `/live/${username}-${expireTime}-${process.env.RTMP_SECRET}`;
 console.log(`sign=${expireTime}-${md5(keyString)}`);
 
 nms.run();

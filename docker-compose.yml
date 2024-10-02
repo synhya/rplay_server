@@ -17,13 +17,14 @@ services:
       - web
   rtmp_server:
     container_name: rtmp_server
-    restart: unless-stopped 
+    restart: unless-stopped
     network_mode: host
     build:
       context: .
       dockerfile: DockerfileRtmp
     volumes:
       - /usr/local/bin/ffmpeg:/usr/local/bin/ffmpeg
+      - /media:app/media
     expose:
       - 1935 # RTMP
       - 8000 # dashboard
