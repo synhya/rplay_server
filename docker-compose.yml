@@ -25,10 +25,9 @@ services:
     expose:
       - 1935 # RTMP
       - 8000 # dashboard
+
     environment:
       - NODE_ENV=production
-    networks:
-      - web
 
 networks:
   web:
