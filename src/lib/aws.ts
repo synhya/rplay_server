@@ -7,7 +7,7 @@ import {
   GetObjectCommand,
   DeleteBucketCommand,
 } from "@aws-sdk/client-s3";
-import { createInterface } from "readline/promises";
+import { createInterface } from "node:readline/promises";
 import fs from "node:fs";
 import path from "node:path";
 
