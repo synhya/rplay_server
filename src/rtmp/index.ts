@@ -1,15 +1,45 @@
 import { connect as connectdb } from "@/db";
 import { StreamModel } from "@/db/streamModel";
 import { nms } from "./server";
+import { watch } from "chokidar";
+import path from "node:path";
+import { uploadFileToBucket } from "@/lib/aws";
 
 connectdb().then(() => nms.run());
 
+const baseDirectory = "./media/live";
+const watcher = watch(baseDirectory, {
+  ignored: /(^|[\/\\])\../,
+  persistent: true,
+  depth: 2,
+});
+
+watcher
+  .on("add", async (filePath) => {
+    const streamPath = path.relative(baseDirectory, filePath); // id/index.ts(m3u8)
+    const streamDirectory = streamPath.split(path.sep)[0]; // id
+    const playlistFilePath = path.join(
+      baseDirectory,
+      streamDirectory,
+      "index.m3u8"
+    ); // media/live/id/index.m3u8
+    await uploadFileToBucket(filePath);
+    await uploadFileToBucket(playlistFilePath);
+  })
+  .on("error", (error) => console.error(`Watcher error: ${error}`));
+
 nms.on("doneConnect", async (id, args) => {
   try {
-    console.log("[NodeEvent on doneConnect]", `id=${id} args=${JSON.stringify(args)}`);
+    console.log(
+      "[NodeEvent on doneConnect]",
+      `id=${id} args=${JSON.stringify(args)}`
+    );
 
     // 방송 중단시에 로그기록
-    const stream = await StreamModel.findOneAndUpdate({ "current.streamId": id }, { $unset: { current: 1 } }).exec();
+    const stream = await StreamModel.findOneAndUpdate(
+      { "current.streamId": id },
+      { $unset: { current: 1 } }
+    ).exec();
 
     if (!stream) {
       console.error("Stream not found for id ", id);
@@ -28,7 +58,10 @@ nms.on("doneConnect", async (id, args) => {
 });
 
 nms.on("prePublish", async (id, StreamPath, args) => {
-  console.log("[NodeEvent on prePublish]", `id=${id} StreamPath=${StreamPath} args=${JSON.stringify(args)}`);
+  console.log(
+    "[NodeEvent on prePublish]",
+    `id=${id} StreamPath=${StreamPath} args=${JSON.stringify(args)}`
+  );
 
   const streamKey = (args as any)?.sign;
   const session: any = nms.getSession(id);
@@ -49,10 +82,16 @@ nms.on("prePublish", async (id, StreamPath, args) => {
 });
 
 nms.on("postPublish", (id, StreamPath, args) => {
-  console.log("[NodeEvent on postPublish]", `id=${id} StreamPath=${StreamPath} args=${JSON.stringify(args)}`);
+  console.log(
+    "[NodeEvent on postPublish]",
+    `id=${id} StreamPath=${StreamPath} args=${JSON.stringify(args)}`
+  );
 
   const streamKey = (args as any)?.sign;
-  StreamModel.updateOne({ "streamKey.value": streamKey }, { current: { streamId: id, startedAt: new Date() } }).exec();
+  StreamModel.updateOne(
+    { "streamKey.value": streamKey },
+    { current: { streamId: id, startedAt: new Date() } }
+  ).exec();
 });
 
 // nms.on('preConnect', (id, args) => {

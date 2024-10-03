@@ -2,54 +2,44 @@ import { env } from "@/common/utils/envConfig";
 import {
   S3Client,
   PutObjectCommand,
-  CreateBucketCommand,
   DeleteObjectCommand,
-  DeleteBucketCommand,
   paginateListObjectsV2,
   GetObjectCommand,
+  DeleteBucketCommand,
 } from "@aws-sdk/client-s3";
 import { createInterface } from "readline/promises";
+import fs from "node:fs";
+import path from "node:path";
 
 // a client can be shared by different commands.
-const s3Client = new S3Client({ 
+const s3Client = new S3Client({
   region: "ap-northeast-2",
   credentials: {
     accessKeyId: env.AWS_ACCESS_KEY,
     secretAccessKey: env.AWS_SECRET_KEY,
-  }
- });
+  },
+});
 
-export const uploadToS3 = async (file: File, folder: string) => {
+export const uploadFileToBucket = async (filePath: string) => {
+  const fileContent = fs.createReadStream(filePath);
+  const fileName = path.basename(filePath);
+  const folderNames = path.dirname(filePath).split(path.sep);
+  const folderName = folderNames[folderNames.length - 1];
   // Create an Amazon S3 bucket. The epoch timestamp is appended
   // to the name to make it unique.
-  const bucketName = `test-bucket-${Date.now()}`;
-  await s3Client.send(
-    new CreateBucketCommand({
-      Bucket: bucketName,
-    })
-  );
+  const bucketName = `synhya`;
 
-  // Put an object into an Amazon S3 bucket.
-  await s3Client.send(
-    new PutObjectCommand({
-      Bucket: bucketName,
-      Key: "my-first-object.txt",
-      Body: "Hello JavaScript SDK!",
-    })
-  );
+  // Upload the file to the Amazon S3 bucket.
+  const uploadParams = {
+    Bucket: bucketName,
+    Key: `live/${folderName}/${fileName}`,
+    Body: fileContent,
+  };
 
-  // Read the object.
-  const { Body } = await s3Client.send(
-    new GetObjectCommand({
-      Bucket: bucketName,
-      Key: "my-first-object.txt",
-    })
-  );
+  await s3Client.send(new PutObjectCommand(uploadParams));
+};
 
-  if (Body) {
-    console.log(await Body.transformToString());
-  }
-
+export const deleteBucket = async (bucketName: string) => {
   // Confirm resource deletion.
   const prompt = createInterface({
     input: process.stdin,
