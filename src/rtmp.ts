@@ -57,30 +57,55 @@ connectdb().then(() => nms.run());
 //   console.log('[NodeEvent on postConnect]', `id=${id} args=${JSON.stringify(args)}`);
 // });
 
-nms.on("doneConnect", (id, args) => {
-  console.log("[NodeEvent on doneConnect]", `id=${id} args=${JSON.stringify(args)}`);
+nms.on("doneConnect", async (id, args) => {
+  try {
+    console.log("[NodeEvent on doneConnect]", `id=${id} args=${JSON.stringify(args)}`);
 
-  // 방송 중단시에 로그기록
+    // 방송 중단시에 로그기록
+    const streamKey = (args as any)?.sign;
+    const stream = await StreamModel.findOneAndUpdate(
+      { "streamKey.value": streamKey },
+      { $unset: { current: 1 } },
+    ).exec();
+
+    if (!stream) {
+      console.error("Stream not found for key ", streamKey);
+      return;
+    }
+
+    stream.history.push({ startedAt: stream?.current?.startedAt, endedAt: new Date() });
+    stream.save();
+  } catch (err) {
+    console.error(err);
+  }
 });
 
-nms.on("prePublish", (id, StreamPath, args) => {
+nms.on("prePublish", async (id, StreamPath, args) => {
   console.log("[NodeEvent on prePublish]", `id=${id} StreamPath=${StreamPath} args=${JSON.stringify(args)}`);
-  // let session = nms.getSession(id);
-  // session.reject();
+
+  const streamKey = (args as any)?.sign;
+  const session: any = nms.getSession(id);
+
+  if (!streamKey) {
+    console.error("Stream key not found");
+    session.reject();
+    return;
+  }
+
+  const stream = await StreamModel.exists({ "streamKey.value": streamKey });
+
+  if (!stream) {
+    console.error("Stream not found for key ", streamKey);
+    session.reject();
+    return;
+  }
 });
 
 nms.on("postPublish", async (id, StreamPath, args) => {
   console.log("[NodeEvent on postPublish]", `id=${id} StreamPath=${StreamPath} args=${JSON.stringify(args)}`);
 
-  // // /live/synhya
-  // const user = await UserModel.findOne({ name: StreamPath.split('/')[2] }).exec();
-
-  // if (!user) {
-  //   console.error('User not found');
-  //   return;
-  // }
-
-  // StreamModel.updateOne({ user: user._id }, { current: { streamId: id, startedAt: new Date() } }).exec();
+  const streamKey = (args as any)?.sign;
+  StreamModel.updateOne({ "streamKey.value": streamKey }, { current: { streamId: id, startedAt: new Date() } }).exec();
 });
 
 // nms.on('donePublish', (id, StreamPath, args) => {
