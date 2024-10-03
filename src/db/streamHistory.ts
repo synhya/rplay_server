@@ -10,6 +10,7 @@ const schema = new Schema(
       expiresAt: { type: Date, required: true },
     },
     current: {
+      streamId: { type: String, required: true },
       startedAt: { type: Date, required: true },
     },
     history: {

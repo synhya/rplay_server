@@ -40,10 +40,16 @@ const nms = new NodeMediaServer({
 });
 
 // 오늘부터 일주일 뒤까지만 유효한 URL을 생성
-const username = "synhya";
-const expireTime = Date.now() + 60 * 60 * 24 * 7 * 1000;
-const keyString = `/live/${username}-${expireTime}-${process.env.RTMP_SECRET}`;
-console.log(`sign=${expireTime}-${md5(keyString)}`);
+export const generateStreamKey = (userName: string) => {
+  const expireTime = Date.now() + 60 * 60 * 24 * 7 * 1000;
+  const keyString = `/live/${userName}-${expireTime}-${process.env.RTMP_SECRET}`;
+
+  // `sign=${expireTime}-${md5(keyString)}`
+  return {
+    value: `${expireTime}-${md5(keyString)}`,
+    expiresAt: new Date(expireTime),
+  };
+};
 
 connectdb().then(() => nms.run());
 
@@ -62,14 +68,10 @@ nms.on("doneConnect", async (id, args) => {
     console.log("[NodeEvent on doneConnect]", `id=${id} args=${JSON.stringify(args)}`);
 
     // 방송 중단시에 로그기록
-    const streamKey = (args as any)?.sign;
-    const stream = await StreamModel.findOneAndUpdate(
-      { "streamKey.value": streamKey },
-      { $unset: { current: 1 } },
-    ).exec();
+    const stream = await StreamModel.findOneAndUpdate({ "current.streamId": id }, { $unset: { current: 1 } }).exec();
 
     if (!stream) {
-      console.error("Stream not found for key ", streamKey);
+      console.error("Stream not found for id ", id);
       return;
     }
 
@@ -101,7 +103,7 @@ nms.on("prePublish", async (id, StreamPath, args) => {
   }
 });
 
-nms.on("postPublish", async (id, StreamPath, args) => {
+nms.on("postPublish", (id, StreamPath, args) => {
   console.log("[NodeEvent on postPublish]", `id=${id} StreamPath=${StreamPath} args=${JSON.stringify(args)}`);
 
   const streamKey = (args as any)?.sign;
