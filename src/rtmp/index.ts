@@ -10,6 +10,7 @@ connectdb().then(() => nms.run());
 const baseDirectory = "./media/live";
 const watcher = watch(baseDirectory, {
   ignored: /(^|[\/\\])\../,
+  ignoreInitial: true,
   persistent: true,
   depth: 2,
 });

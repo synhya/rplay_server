@@ -4,7 +4,7 @@ import NodeMediaServer from "node-media-server";
 export const nms = new NodeMediaServer({
   rtmp: {
     port: 1935,
-    chunk_size: 4096,
+    chunk_size: 2048,
     gop_cache: true,
     ping: 30,
     ping_timeout: 60,
@@ -23,7 +23,9 @@ export const nms = new NodeMediaServer({
       {
         app: "live",
         hls: true,
-        hlsFlags: "[hls_time=1:hls_list_size=20:hls_flags=delete_segments]",
+        hlsFlags:
+          "[hls_time=4:hls_list_size=7:hls_flags=delete_segments+program_date_time]",
+        hlsKeep: true,
         // dash: true,
         // dashFlags: "[f=dash:window_size=3:extra_window_size=5]",
       },
