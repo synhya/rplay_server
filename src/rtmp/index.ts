@@ -17,6 +17,7 @@ nms.on("doneConnect", async (id, args) => {
     }
 
     stream.history.push({
+      streamId: id,
       startedAt: stream?.current?.startedAt,
       endedAt: new Date(),
     });

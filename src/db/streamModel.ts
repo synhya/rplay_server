@@ -28,10 +28,12 @@ const schema = new Schema(
     history: {
       type: [
         {
+          streamId: { type: String, required: true },
           startedAt: { type: Date, required: true },
           endedAt: { type: Date, required: true },
         },
       ],
+      _id: false,
       required: true,
     },
   },
