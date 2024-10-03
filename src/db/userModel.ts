@@ -5,7 +5,6 @@ const userSchemaMongoose = new Schema(
   {
     name: { type: String, required: true, unique: true }, // 필수 필드 설정
     email: { type: String, required: true, unique: true, index: true }, // 필수, 고유, 인덱스 설정
-    age: { type: String, required: true }, // 필수 필드 설정
   },
   {
     timestamps: true,

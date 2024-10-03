@@ -1,67 +1,8 @@
-import md5 from "md5";
-import NodeMediaServer from "node-media-server";
-import { connect as connectdb } from "./db";
-import { StreamModel } from "./db/streamHistory";
-import { UserModel } from "./db/userModel";
-
-const nms = new NodeMediaServer({
-  rtmp: {
-    port: 1935,
-    chunk_size: 4096,
-    gop_cache: true,
-    ping: 30,
-    ping_timeout: 60,
-  },
-  http: {
-    port: 8000,
-    mediaroot: "./media",
-    allow_origin: "*",
-  },
-  trans: {
-    ffmpeg:
-      process.env.NODE_ENV === "production"
-        ? "/usr/local/bin/ffmpeg"
-        : "C:/ProgramData/chocolatey/lib/ffmpeg/tools/ffmpeg/bin/ffmpeg.exe",
-    tasks: [
-      {
-        app: "live",
-        hls: true,
-        hlsFlags: "[hls_time=1:hls_list_size=20:hls_flags=delete_segments]",
-        // dash: true,
-        // dashFlags: "[f=dash:window_size=3:extra_window_size=5]",
-      },
-    ],
-  },
-  auth: {
-    play: true,
-    publish: true,
-    secret: process.env.RTMP_SECRET,
-  },
-});
-
-// 오늘부터 일주일 뒤까지만 유효한 URL을 생성
-export const generateStreamKey = (userName: string) => {
-  const expireTime = Date.now() + 60 * 60 * 24 * 7 * 1000;
-  const keyString = `/live/${userName}-${expireTime}-${process.env.RTMP_SECRET}`;
-
-  // `sign=${expireTime}-${md5(keyString)}`
-  return {
-    value: `${expireTime}-${md5(keyString)}`,
-    expiresAt: new Date(expireTime),
-  };
-};
+import { connect as connectdb } from "@/db";
+import { StreamModel } from "@/db/streamModel";
+import { nms } from "./server";
 
 connectdb().then(() => nms.run());
-
-// nms.on('preConnect', (id, args) => {
-//   console.log('[NodeEvent on preConnect]', `id=${id} args=${JSON.stringify(args)}`);
-//   // let session = nms.getSession(id);
-//   // session.reject();
-// });
-
-// nms.on('postConnect', (id, args) => {
-//   console.log('[NodeEvent on postConnect]', `id=${id} args=${JSON.stringify(args)}`);
-// });
 
 nms.on("doneConnect", async (id, args) => {
   try {
@@ -75,7 +16,10 @@ nms.on("doneConnect", async (id, args) => {
       return;
     }
 
-    stream.history.push({ startedAt: stream?.current?.startedAt, endedAt: new Date() });
+    stream.history.push({
+      startedAt: stream?.current?.startedAt,
+      endedAt: new Date(),
+    });
     stream.save();
   } catch (err) {
     console.error(err);
@@ -109,6 +53,16 @@ nms.on("postPublish", (id, StreamPath, args) => {
   const streamKey = (args as any)?.sign;
   StreamModel.updateOne({ "streamKey.value": streamKey }, { current: { streamId: id, startedAt: new Date() } }).exec();
 });
+
+// nms.on('preConnect', (id, args) => {
+//   console.log('[NodeEvent on preConnect]', `id=${id} args=${JSON.stringify(args)}`);
+//   // let session = nms.getSession(id);
+//   // session.reject();
+// });
+
+// nms.on('postConnect', (id, args) => {
+//   console.log('[NodeEvent on postConnect]', `id=${id} args=${JSON.stringify(args)}`);
+// });
 
 // nms.on('donePublish', (id, StreamPath, args) => {
 //   console.log('[NodeEvent on donePublish]', `id=${id} StreamPath=${StreamPath} args=${JSON.stringify(args)}`);

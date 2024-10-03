@@ -15,6 +15,6 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["vitest/globals"]
   },
-  "include": ["src/**/*", "src/rtmp.ts"],
+  "include": ["src/**/*", "src/rtmp/server.ts"],
   "exclude": ["node_modules"]
 }

@@ -1,18 +1,13 @@
 import { StatusCodes } from "http-status-codes";
 
-import { UserRepository } from "@/api/user/userRepository";
 import type { User } from "@/api/user/userValidation";
 import { ServiceResponse } from "@/common/models/serviceResponse";
+import { StreamModel } from "@/db/streamModel";
 import { UserModel } from "@/db/userModel";
+import { generateStreamKey } from "@/rtmp/server";
 import { logger } from "@/server";
 
 export class UserService {
-  private userRepository: UserRepository;
-
-  constructor(repository: UserRepository = new UserRepository()) {
-    this.userRepository = repository;
-  }
-
   // Retrieves all users from the database
   async findAll(): Promise<ServiceResponse<User[] | null>> {
     try {
@@ -34,10 +29,9 @@ export class UserService {
   }
 
   // Retrieves a single user by their ID
-  async findById(id: number): Promise<ServiceResponse<User | null>> {
+  async findById(id: string): Promise<ServiceResponse<User | null>> {
     try {
-      // const user = await this.userRepository.findByIdAsync(id);
-      const user = await UserModel.findOne({ id: 1234 }).exec();
+      const user = await UserModel.findById(id).exec();
       if (!user) {
         return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
       }
@@ -46,6 +40,44 @@ export class UserService {
       const errorMessage = `Error finding user with id ${id}:, ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure("An error occurred while finding user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async findStreamKeyById(id: string): Promise<ServiceResponse<string | null>> {
+    try {
+      const user = await UserModel.findById(id).exec();
+      if (!user) {
+        return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
+      }
+      const stream = await StreamModel.findOneAndUpdate(
+        { user: id },
+        { $setOnInsert: { user: id, streamKey: generateStreamKey(user.name) } },
+        { upsert: true, new: true },
+      ).exec();
+      console.log(stream);
+
+      if (stream.streamKey.expiresAt < new Date()) {
+        stream.streamKey = generateStreamKey(user.name);
+        stream.save();
+      }
+
+      return ServiceResponse.success<string>("Stream key found", stream.streamKey.value);
+    } catch (ex) {
+      const errorMessage = `Error finding user with id ${id}: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure("An error occurred while finding user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  // Creates a new user
+  async createUser(user: User): Promise<ServiceResponse<User | null>> {
+    try {
+      const newUser = await UserModel.create(user);
+      return ServiceResponse.success<User>("User created", newUser);
+    } catch (ex) {
+      const errorMessage = `Error creating user: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure("An error occurred while creating user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 }

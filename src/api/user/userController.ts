@@ -10,8 +10,17 @@ class UserController {
   };
 
   public getUser: RequestHandler = async (req: Request, res: Response) => {
-    const id = Number.parseInt(req.params.id as string, 10);
-    const serviceResponse = await userService.findById(id);
+    const serviceResponse = await userService.findById(req.params.id);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  public getStreamKey: RequestHandler = async (req: Request, res: Response) => {
+    const serviceResponse = await userService.findStreamKeyById(req.params.id);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  public createUser: RequestHandler = async (req: Request, res: Response) => {
+    const serviceResponse = await userService.createUser(req.body);
     return handleServiceResponse(serviceResponse, res);
   };
 }

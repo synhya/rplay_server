@@ -9,7 +9,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch --clear-screen=false src/index.ts | pino-pretty",
-    "rtmp": "tsx watch --clear-screen=false src/rtmp.ts",
+    "rtmp": "tsx watch --clear-screen=false src/rtmp/index.ts",
     "build": "tsup",
     "start": "node dist/index.js",
     "clean": "rimraf dist coverage",
