@@ -16,4 +16,5 @@ export const env = cleanEnv(process.env, {
   MONGO_URI: str(),
   AWS_ACCESS_KEY: str(),
   AWS_SECRET_KEY: str(),
+  AWS_CLOUDFRONT_KEY_ID: str(),
 });

@@ -27,3 +27,4 @@ media/*
 *.sw?
 
 .env
+cloudfront_private.pem
