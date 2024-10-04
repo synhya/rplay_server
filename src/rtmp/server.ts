@@ -2,6 +2,7 @@ import md5 from "md5";
 import NodeMediaServer from "node-media-server";
 
 export const nms = new NodeMediaServer({
+  logType: 1,
   rtmp: {
     port: 1935,
     chunk_size: 2048,
@@ -15,17 +16,13 @@ export const nms = new NodeMediaServer({
     allow_origin: "*",
   },
   trans: {
-    ffmpeg:
-      process.env.NODE_ENV === "production"
-        ? "/usr/local/bin/ffmpeg"
-        : "C:/ProgramData/chocolatey/lib/ffmpeg/tools/ffmpeg/bin/ffmpeg.exe",
+    ffmpeg: process.env.NODE_ENV === "production" ? "/usr/local/bin/ffmpeg" : "C:/ProgramData/chocolatey/lib/ffmpeg/tools/ffmpeg/bin/ffmpeg.exe",
     tasks: [
       {
         app: "live",
         hls: true,
-        hlsFlags:
-          "[hls_time=4:hls_list_size=7:hls_flags=delete_segments+program_date_time]",
-        hlsKeep: true,
+        hlsFlags: "[hls_time=4:hls_list_size=7:hls_flags=delete_segments+program_date_time]",
+        hlsKeep: false,
         // dash: true,
         // dashFlags: "[f=dash:window_size=3:extra_window_size=5]",
       },

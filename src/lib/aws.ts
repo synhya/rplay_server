@@ -11,6 +11,7 @@ import { getSignedUrl } from "@aws-sdk/cloudfront-signer";
 import { createInterface } from "node:readline/promises";
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 import { StatusCodes } from "http-status-codes";
 
 // a client can be shared by different commands.
@@ -25,11 +26,14 @@ const s3Client = new S3Client({
 const bucketName = `synhya`;
 const cloudfrontDomain = `d1u2ai9ytjvk88.cloudfront.net`;
 
+// buffer from file
+const privateKey = fs.readFileSync("./cloudfront_private.pem", "utf8");
+
 const generateSignedUrl = (filePath: string, expireTimeInSeconds: number) => {
   const signedUrl = getSignedUrl({
     url: `https://${cloudfrontDomain}/${filePath}`, // CloudFront URL
     keyPairId: env.AWS_CLOUDFRONT_KEY_ID,
-    privateKey: "/cloudfront_private.pem",
+    privateKey: privateKey,
     dateLessThan: new Date(
       Date.now() + expireTimeInSeconds * 1000
     ).toISOString(),
@@ -41,11 +45,15 @@ const generateSignedUrl = (filePath: string, expireTimeInSeconds: number) => {
 export const uploadFileToBucket = async (filePath: string) => {
   try {
     const fileContent = fs.createReadStream(filePath);
-    const fileName = path.basename(filePath);
+    const fileName = path.basename(filePath, path.extname(filePath)); 
+    const extension = path.extname(filePath);
     const folderNames = path.dirname(filePath).split(path.sep);
     const folderName = folderNames[folderNames.length - 1];
 
-    const s3ObjectKey = `live/${folderName}/${fileName}`;
+    const timestamp = new Date().toISOString();
+    const encryptedKey = crypto.createHash('sha256').update(`${folderName}/${fileName}-${timestamp}`).digest('hex');
+
+    const s3ObjectKey = `live/${encryptedKey}${extension}`;
     // Upload the file to the Amazon S3 bucket.
     const uploadParams = {
       Bucket: bucketName,
