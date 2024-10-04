@@ -4,6 +4,7 @@ import fs from "node:fs";
 // @ts-ignore
 import { Parser } from "m3u8-parser";
 import { ensureFileExists } from "@/lib/utils";
+import dayjs from "dayjs";
 
 export const baseDirectory = "./media/live";
 const maxSegments = 7;
@@ -45,12 +46,13 @@ export const onHlsAddEvent = async (filePath: string) => {
 
     const newSegment = {
       duration: originalPlaylist.segments[originalPlaylist.segments.length - 1].duration,
+      programDateTime: originalPlaylist.segments[originalPlaylist.segments.length - 1].programDateTime,
       uri: signedUrl,
-      programDateTime: new Date().toISOString(),
     };
     signedPlaylist.segments.push(newSegment);
 
     // EXT-X-MEDIA-SEQUENCE 값도 갱신
+    signedPlaylist.targetDuration = originalPlaylist.targetDuration;
     signedPlaylist.mediaSequence = originalPlaylist.mediaSequence;
 
     // 새로운 m3u8 파일을 직렬화하여 track.m3u8로 저장
@@ -71,9 +73,7 @@ const generateM3u8 = (playlist: any) => {
 
   playlist.segments.forEach((segment: any) => {
     lines.push(`#EXTINF:${segment.duration},`);
-    if (segment.programDateTime) {
-      lines.push(`#EXT-X-PROGRAM-DATE-TIME:${segment.programDateTime}`);
-    }
+    lines.push(`#EXT-X-PROGRAM-DATE-TIME:${dayjs(segment.programDateTime).format("YYYY-MM-DDTHH:mm:ssZ")}`);
     lines.push(segment.uri);
   });
 
